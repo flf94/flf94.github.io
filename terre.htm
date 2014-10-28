@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<!-- saved from url=(0060)http://www.jerome-baudoux.com/stuff/bbl/samples/4/index.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>WebGL</title>
+        <meta charset="utf-8">
+        <style>
+            * {
+                border: 0;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+        </style>
+		<script src="http://www.html5canvastutorials.com/libraries/three.min.js"></script>
+        <script>
+		
+	
+		
+            function webGLStart() {
+				var start = Date.now();
+                var width = 600;
+                var height = 600;
+                var camera, scene, renderer, mesh1, mesh2, earthMesh;
+ var cube, sphere, moon;
+                /**
+                 * Executed once
+                 */
+				 var neheTexture;
+
+				 	  var angularSpeed = 0.05; 
+      var lastTime = 0;
+ 
+      
+ 
+				 
+				 
+
+			  function myLoadedTexture() {
+				renderer.bindTexture(renderer.TEXTURE_2D, neheTexture);
+				renderer.pixelStorei(renderer.UNPACK_FLIP_Y_WEBGL, true);
+				renderer.texImage2D(renderer.TEXTURE_2D, 0,renderer.RGBA, renderer.RGBA, renderer.UNSIGNED_BYTE, neheTexture.image);
+				renderer.texParameteri(renderer.TEXTURE_2D, renderer.TEXTURE_MAG_FILTER, renderer.NEAREST);
+				renderer.texParameteri(renderer.TEXTURE_2D, renderer.TEXTURE_MIN_FILTER, renderer.NEAREST);
+				renderer.bindTexture(renderer.TEXTURE_2D, null);
+			  }
+				 
+				 
+                function init() {
+
+				
+				 canvas: document.getElementById('canvas');
+				 
+				 
+				  var canvas = document.getElementById("canvas");
+                    //
+                    // ThreeJS Context
+                    //
+                    renderer = new THREE.WebGLRenderer({
+                        canvas: document.getElementById('canvas'), 
+                        antialias:true
+                    });
+                    renderer.setSize(width, height);
+                    renderer.setClearColor(0xffffff, 1);
+					
+					
+                  //  renderer.setClearColor(0x000000, 1);
+
+                    //
+                    // Camera
+                    //
+                    camera = new THREE.PerspectiveCamera(70, width/height, 1, 5000);
+                    camera.position = new THREE.Vector3(0, 300, 600);
+                    camera.lookAt(new THREE.Vector3(0, 0, 0));
+                    
+                    //
+                    // Objects
+                    //
+                    
+                    // Object 1
+                    var geometry = new THREE.SphereGeometry( 100, 32, 32);
+					
+                  // var texture = THREE.ImageUtils.loadTexture('earthmap1k.jpg');
+					//new material1 = THREE.MeshNormalMaterial()
+					var material  = new THREE.MeshPhongMaterial();
+				//	var texture = THREE.ImageUtils.loadTexture('test1024.jpg');
+					//texture.generateMipmaps = false;
+				//	material.map = THREE.ImageUtils.loadTexture('05.png');
+					//material.specular  = new THREE.Color('grey')
+			
+			
+			
+
+					neheTexture = new THREE.Texture();
+					var imageTerre  = new Image();
+				//	imageTerre.onload = function() { 
+					//	renderer.bindTexture(renderer.TEXTURE_2D, neheTexture);
+//				renderer.pixelStorei(renderer.UNPACK_FLIP_Y_WEBGL, true);
+			//	renderer.texImage2D(renderer.TEXTURE_2D, 0,renderer.RGBA, renderer.RGBA, renderer.UNSIGNED_BYTE, neheTexture.image);
+			//	renderer.texParameteri(renderer.TEXTURE_2D, renderer.TEXTURE_MAG_FILTER, renderer.NEAREST);
+				//renderer.texParameteri(renderer.TEXTURE_2D, renderer.TEXTURE_MIN_FILTER, renderer.NEAREST);
+			//	renderer.bindTexture(renderer.TEXTURE_2D, null);
+
+					
+	//				};					
+
+					imageTerre.src = "earthmap1k.jpg";			
+			neheTexture.image = imageTerre;
+
+					var texture = neheTexture;
+					
+					material.map = texture;
+						//		material.map.needsUpdate = true;
+
+					var material1  = new THREE.MeshPhongMaterial()
+					// create the sphere's material
+					var sphereMaterial =
+					   new THREE.MeshNormalMaterial();
+					
+/*
+					var material  = new THREE.MeshPhongMaterial({
+					  map     : new THREE.Texture(canvasCloud),
+					  side        : THREE.DoubleSide,
+					  opacity     : 0.8,
+					  transparent : true,
+					  depthWrite  : false,
+					})
+  */
+					var geometry1   = new THREE.SphereGeometry(100, 32, 32)
+				//	materialt = new THREE.MeshBasicMaterial({color: '#00abb1'});
+                    mesh1 = new THREE.Mesh(geometry1, sphereMaterial);
+        			 mesh1.overdraw = true;
+
+					
+					mesh1.position.x = -200;
+                    
+                    // Object 2
+                    var geometry2 = new THREE.BoxGeometry( 200, 200, 200 );
+                    var material2 = new THREE.MeshFaceMaterial([
+                        new THREE.MeshBasicMaterial({color: '#f00'}),
+                        new THREE.MeshBasicMaterial({color: '#0f0'}),
+                        new THREE.MeshBasicMaterial({color: '#00f'}),
+                        new THREE.MeshBasicMaterial({color: '#ff0'}),
+                        new THREE.MeshBasicMaterial({color: '#0ff'}),
+                        new THREE.MeshBasicMaterial({color: '#f0f'})
+                    ]);
+                    mesh2 = new THREE.Mesh(geometry2, material2);
+                    mesh2.position.x = 200;
+
+					
+					var light = new THREE.PointLight( 0xff0000, 1, 100 );
+light.position.set( 50, 50, 50 );
+
+					
+                    //
+                    // Scene
+                    //
+                    scene = new THREE.Scene();
+                    scene.add(camera);
+			//		scene.add( light );
+/*
+			
+									material.map = THREE.ImageUtils.loadTexture('terre.jpg', {}, function() {
+    renderer.render(scene, camera);
+	})
+	
+	material.specular  = new THREE.Color('grey')
+	
+	*/
+				 // var sphere = new THREE.Mesh(new THREE.SphereGeometry(100, 32, 32), new THREE.MeshNormalMaterial());
+			 // scene.add(sphere);
+		 
+	
+					earthMesh = new THREE.Mesh(geometry, material)
+	
+				//	material.map.needsUpdate = true;
+
+
+					//scene.add(sphere);
+                    scene.add(mesh1);
+                  scene.add(mesh2);
+															scene.add(earthMesh);
+
+                }
+
+				function inittwo() {
+								
+
+													
+													
+					var width  = window.innerWidth,
+						height = window.innerHeight;
+
+					var scene = new THREE.Scene();
+
+					var camera = new THREE.PerspectiveCamera(45, width / height, 0.01, 1000);
+					camera.position.z = 1.5;
+
+					renderer = new THREE.WebGLRenderer();
+					renderer.setSize(width, height);								
+										
+									var light = new THREE.DirectionalLight(0xffffff, 1);
+						light.position.set(5,3,5);
+						scene.add(light);
+
+						
+						mesh1 = new THREE.Mesh(
+						  new THREE.SphereGeometry(0.5, 32, 32),
+						  new THREE.MeshPhongMaterial({
+							map: THREE.ImageUtils.loadTexture('terre.jpg')})
+						);
+						
+						
+						       scene = new THREE.Scene();
+                    scene.add(camera);
+		
+					var light = new THREE.PointLight( 0xff0000, 1, 100 );
+light.position.set( 50, 50, 50 );
+
+scene.add(light);
+
+					//scene.add(sphere);
+                    scene.add(mesh1);
+				}
+				
+
+function textureHasLoaded() {
+  safeToRender = true;
+}
+                /**
+                 * Executed every frame
+                 */
+                function animate() {
+                    // Schedule next frame
+                    requestAnimationFrame( animate );
+                    
+                    // Updates objects
+              //      mesh1.rotation.y+=.01;
+                  //  earthMesh.rotation.y+=.01;
+					
+					//cube.rotation.y+=.01;
+                    
+                    // Draw frame
+                    renderer.render( scene, camera );
+                }
+
+				
+				function initSphere() {
+				 // renderer
+			  var renderer = new THREE.WebGLRenderer();
+			  renderer.setSize(window.innerWidth, window.innerHeight);
+			  document.body.appendChild(renderer.domElement);
+		 
+			  // camera
+			  var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+			  camera.position.z = 500;
+		 
+			  // scene
+			  var scene = new THREE.Scene();
+						
+			  // sphere
+			  // the first argument of THREE.SphereGeometry is the radius, the second argument is
+			  // the segmentsWidth, and the third argument is the segmentsHeight.  Increasing the 
+			  // segmentsWidth and segmentsHeight will yield a more perfect circle, but will degrade
+			  // rendering performance
+			  var materialSphere = new THREE.MeshPhongMaterial();
+			   var texture = THREE.ImageUtils.loadTexture('test.jpg',undefined, 
+                                           textureHasLoaded);
+			   materialSphere.map = texture;
+			   texture.generateMipmaps = false;
+			   				materialSphere.map.needsUpdate = true;
+
+			  			  sphere = new THREE.Mesh(new THREE.SphereGeometry(150, 100, 100), materialSphere);
+
+			  sphere.overdraw = true;
+//			  scene.add(sphere);
+	
+			cube = new THREE.Mesh(new THREE.CubeGeometry(200, 200, 200), materialSphere);
+      cube.overdraw = true;
+	  
+		scene.add(cube);
+	
+		 				var light = new THREE.DirectionalLight(0xffffff, 1);
+						light.position.set(5,3,5);
+						scene.add(light);
+
+		 
+			  renderer.render(scene, camera);
+				
+				
+				
+				}
+				
+				
+				function initCube() {
+				 // renderer
+				 /*
+				 canvas: document.getElementById('canvas');
+				 
+				 
+				  var canvas = document.getElementById("canvas");
+                    //
+                    // ThreeJS Context
+                    //
+                    renderer = new THREE.WebGLRenderer({
+                        canvas: document.getElementById('canvas'), 
+                        antialias:true
+                    });*/
+				 
+      renderer = new THREE.WebGLRenderer({
+                       
+                        antialias:true
+                    });
+					
+					renderer.setClearColor(0x000000, 1);
+
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+ 
+      // camera
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+      camera.position.z = 500;
+ 
+      // scene
+      scene = new THREE.Scene();
+      
+      // material
+      var material = new THREE.MeshPhongMaterial({
+        map: THREE.ImageUtils.loadTexture('earthmap1k.jpg') ,
+		bumpMap:  THREE.ImageUtils.loadTexture('earthbump1k.jpg'),
+		bumpScale: 5
+      });
+	//material.specularMap    = THREE.ImageUtils.loadTexture('earthspec1k.jpg')
+	//material.specular  = new THREE.Color('grey');
+	  
+	  var materialMoon= new THREE.MeshPhongMaterial({
+        map: THREE.ImageUtils.loadTexture('moonmap1k.jpg')
+				, bumpMap:  THREE.ImageUtils.loadTexture('moonbump1k.jpg'),
+		bumpScale: 0.5
+
+      });
+                
+      // cube
+      			  			  cube = new THREE.Mesh(new THREE.SphereGeometry(150, 100, 100), material);
+      			  			  moon = new THREE.Mesh(new THREE.SphereGeometry(25, 20, 20), materialMoon);
+
+							  
+							  
+	  //cube = new THREE.Mesh(new THREE.CubeGeometry(200, 200, 200), material);
+      cube.overdraw = true;
+      cube.rotation.x = Math.PI * 0.1;
+moon.position.x += 300;	
+      scene.add(cube);
+      //  cube.add(moon);
+      scene.add(moon);
+
+      // add subtle ambient lighting
+      var ambientLight = new THREE.AmbientLight(0x222222);
+      scene.add(ambientLight);
+      
+      // directional lighting
+      var directionalLight = new THREE.DirectionalLight(0xffffff);
+      directionalLight.position.set(1, 1, 1).normalize();
+      scene.add(directionalLight);
+ 
+				}
+				
+				// this function is executed on each animation frame
+      function animate2(){
+        // update
+        var time = (new Date()).getTime();
+        var timeDiff = time - lastTime;
+        var angleChange = angularSpeed * timeDiff * 2 * Math.PI / 1000;
+        cube.rotation.y += angleChange;
+		
+		
+		moon.position.x = 0 + 200 * Math.sin(cube.rotation.y /28 ) ;
+		moon.position.z = 0 + 400 * Math.cos(cube.rotation.y /28) ;
+		       moon.rotation.y += angleChange/28;
+
+        lastTime = time;
+ 
+        // render
+        renderer.render(scene, camera);
+ 
+        // request new frame
+        requestAnimationFrame(
+            animate2);
+      }
+				
+				initCube();
+				
+				//inittwo();
+              //  init();
+                animate2();
+            };
+        </script>
+    </head>
+    <body onload="webGLStart();">
+    
+
+</body></html>

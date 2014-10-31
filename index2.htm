@@ -12,7 +12,6 @@ overflow: hidden;
 }
 </style>
 <script src="http://www.html5canvastutorials.com/libraries/three.min.js"></script>
-<script src="OrbitControls.js"></script>
 
 
 <script id="vertexShader" type="x-shader/x-vertex">
@@ -113,7 +112,7 @@ function webGLStart() {
 	
 	var width = 600;
 	var height = 600;
-	var camera, control, scene, renderer, mesh1, mesh2, earthMesh;
+	var camera, scene, renderer, mesh1, mesh2, earthMesh;
 	var earth, sphere, moon, sun, uniforms1;
 	/**
 				* Executed once
@@ -152,8 +151,6 @@ function webGLStart() {
 
 		// scene
 		scene = new THREE.Scene();
-		
-		controls = new THREE.OrbitControls( camera, renderer.domElement );
 		
 		// material
 		var material = new THREE.MeshLambertMaterial({

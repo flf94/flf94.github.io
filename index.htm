@@ -11,96 +11,65 @@ padding: 0;
 overflow: hidden;
 }
 </style>
-<script src="http://www.html5canvastutorials.com/libraries/three.min.js"></script>
+<script src="three.min.js"></script>
+<script src="OrbitControls.js"></script>
 
+<script src='THREEx.WindowResize.js'></script>
 
 <script id="vertexShader" type="x-shader/x-vertex">
 
+	uniform float time;
+	uniform float random;
 
-			
-			uniform float time;
-						uniform float random;
+	// To interpolate for the Pixel
+	varying vec2 vUv;
+	attribute float displacement;
 
-			// To interpolate for the Pixel
-			varying vec2 vUv;
-			attribute float displacement;
-	
-			void main() {
-			
-				// Do nothing fancy here
-				vUv = uv;
-				
-				// float b = 5.0 * pnoise( 0.05 * position, vec3( 100.0 ) );
-				 
-				 
-					//float myNoise = random;
-				 
-				 // displacement = b;
-				    vec3 newPosition = position + 
-                       normal * 
-                       vec3( cos(time) * 3.0);
-					  //vec3(displacement);
-				
-				// Simple projection
-				vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0);
-				gl_Position = projectionMatrix * mvPosition  ;
-				
-		}
+	void main() {
 
-
-
-		</script>
+		// Do nothing fancy here
+		vUv = uv;
+										 
+		// displacement = b;
+		vec3 newPosition = position + 
+							normal * 
+							vec3( cos(time) * 3.0);
+		//vec3(displacement);
 		
-		<script id="pixelShader" type="x-shader/x-fragment">
+		// Simple projection
+		vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0);
+		gl_Position = projectionMatrix * mvPosition  ;
+		
+	}
+</script>
 
-			// Param
-			uniform float time;
-									uniform float random;
+<script id="pixelShader" type="x-shader/x-fragment">
 
-			//uniform float random;
+	// Param
+	uniform float time;
+	uniform float random;
 
-			uniform sampler2D texture;
-			
-			// Interpolated from Vertex
-			varying vec2 vUv;
+	uniform sampler2D texture;
+	
+	// Interpolated from Vertex
+	varying vec2 vUv;
 
-			void main( void ) {
-			
-				// Change the texture coordinate depending on the time
-				// The coordinate recieved here are already interpolated
-				vec2 uv;
-				uv.x = vUv.x;
-				uv.y = vUv.y;
-				//int temps= Math.round(time);;
-			//	float modulo = (( ) + 1 ) / 10;
-				uv.y = vUv.y * 5.0 / 6.0 +    vUv.y * sin(time)*cos(time) / 6.0 ;
-				//uv.y =    normalise(vUv.y * random()) ;
-				//uv.y = vUv.y * 5.0 / 6.0 +  vUv.y  / 6.0 ;
-
+	void main( void ) {
+	
+		// Change the texture coordinate depending on the time
+		// The coordinate recieved here are already interpolated
+		vec2 uv;
+		uv.x = vUv.x;
+		uv.y = vUv.y * 5.0 / 6.0 +    vUv.y * sin(time)*cos(time) / 6.0 ;
 				
-				
-				vec2 uv2;
-				uv2.x = vUv.x; // / 2.0 +    vUv.x * abs(cos(time)) / 2.0 ; 
-				uv2.y = vUv.y;
-				
-				// Color of the pixel
-				//var colorRGB = texture2D(texture, uv).rgb;
-				//if (colorRGB.r > 50 ) 
-				//	colorRGB.r = (colorRGB.r  + s; 
-				// 	
-				vec3 color = texture2D(texture, uv).rgb;
-				
-				float red = texture2D(texture, uv).rgb.r ; 
-				// red  =  0.5  + (red *  random) / 2.0 ;
- 				// red  = red / 2.0  +texture2D(texture, uv2).rgb.r  / 2.0 ;
+		vec3 color = texture2D(texture, uv).rgb;
+		
+		float red = texture2D(texture, uv).rgb.r ; 
+		
+		 gl_FragColor = vec4(red, texture2D(texture, uv).rgb.g, texture2D(texture, uv).rgb.b, 1.0);
+	}
 
-			//	 red  = red *  abs(sin(time)) ;
-				
-				//gl_FragColor = vec4(color , 1.0);
-				 gl_FragColor = vec4(red, texture2D(texture, uv).rgb.g, texture2D(texture, uv).rgb.b, 1.0);
-			}
-
-		</script>
+</script>
 
 
 
@@ -112,70 +81,116 @@ function webGLStart() {
 	
 	var width = 600;
 	var height = 600;
-	var camera, scene, renderer, mesh1, mesh2, earthMesh;
-	var earth, sphere, moon, sun, uniforms1;
-	/**
-				* Executed once
-				*/
-	var neheTexture;
+	var camera, control, scene, renderer;
+	var earth, moon, sun, uniforms1;
+	var mars;
+	var hourCount=0;
+
 
 	var angularSpeed = 0.05; 
 	var lastTime = 0;
 	var start = Date.now();
 	var sizeSphere = 40;
-	var betweenEathToMon = 80;
-	var betweenEathToSun = 200;
-	var positionSun = 0;
+	var factorMoonToEarth= 8;
+	var factorMarsToEarth= 2;
+	var factorEarthToSun= 1;
+	var betweenEarthToMon = 50;
+	var betweenEarthToSun = 500;
+	var betweenMarsToSun = 600;
+
+	var factorElipse = 1.3;
+	
+	var positionSunX = 0;
+	var factorLength=1;
 	
 	var timeLast;
 	var nbLoop = 0;
+	var mouseDown=false;
+	var mouseX, mouseY;
+	var objectCenter=83;
+	var centerOnObject=false;
+	var posZcamZoom=1000;
+	
+	var withShadow=false;
 	
 	function initEarth() {
 		
-		
+
 		renderer = new THREE.WebGLRenderer({		
 			antialias:true
 		});
 		
 		renderer.setClearColor(0x000000, 1);
 
-		renderer.shadowMapEnabled = true;
-		renderer.shadowMapSoft = true;
-		
+		if (withShadow) {
+			renderer.shadowMapEnabled = true;
+			renderer.shadowMapSoft = true;
+		}
 		renderer.setSize(window.innerWidth, window.innerHeight);
 		document.body.appendChild(renderer.domElement);
 
 		// camera
-		camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
-		camera.position.z = 500;
+		camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 5000);
+		camera.position.z = 1000;
+
 
 		// scene
 		scene = new THREE.Scene();
 		
+		
+		if (withShadow) {
+			// material
+			var material = new THREE.MeshLambertMaterial({
+				map: THREE.ImageUtils.loadTexture('earthmap1k.jpg') ,
+				bumpMap:  THREE.ImageUtils.loadTexture('earthbump1k.jpg'),
+				bumpScale: 5
+				//,
+				//transparent: true,
+				//opacity: 1
+			});
+			material.specularMap    = THREE.ImageUtils.loadTexture('earthspec1k.jpg')
+			material.specular  = new THREE.Color('grey');
+			
+			var materialMoon= new THREE.MeshLambertMaterial({
+				map: THREE.ImageUtils.loadTexture('moonmap1k.jpg')
+				, bumpMap:  THREE.ImageUtils.loadTexture('moonbump1k.jpg'),
+				bumpScale: 0.5
+
+			});
+			
+			var materialMars= new THREE.MeshLambertMaterial({
+				map: THREE.ImageUtils.loadTexture('marsmap1k.jpg')
+				, bumpMap:  THREE.ImageUtils.loadTexture('marsbump1k.jpg'),
+				bumpScale: 5
+
+			});
+			
+		} else {
 		// material
-		var material = new THREE.MeshLambertMaterial({
-			map: THREE.ImageUtils.loadTexture('earthmap1k.jpg') ,
-			bumpMap:  THREE.ImageUtils.loadTexture('earthbump1k.jpg'),
-			bumpScale: 5
-			//,
-			//transparent: true,
-			//opacity: 1
-		});
-		material.specularMap    = THREE.ImageUtils.loadTexture('earthspec1k.jpg')
-		material.specular  = new THREE.Color('grey');
-		
-		var materialMoon= new THREE.MeshLambertMaterial({
-			map: THREE.ImageUtils.loadTexture('moonmap1k.jpg')
-			, bumpMap:  THREE.ImageUtils.loadTexture('moonbump1k.jpg'),
-			bumpScale: 0.5
+			var material = new THREE.MeshBasicMaterial({
+				map: THREE.ImageUtils.loadTexture('earthmap1k.jpg') ,
+				bumpMap:  THREE.ImageUtils.loadTexture('earthbump1k.jpg'),
+				bumpScale: 5
+			});
+			material.specularMap    = THREE.ImageUtils.loadTexture('earthspec1k.jpg')
+			material.specular  = new THREE.Color('grey');
+			
+			var materialMoon= new THREE.MeshBasicMaterial({
+				map: THREE.ImageUtils.loadTexture('moonmap1k.jpg')
+				, bumpMap:  THREE.ImageUtils.loadTexture('moonbump1k.jpg'),
+				bumpScale: 0.5
 
-		});
-		
-		
-	//	var materialSun= new THREE.MeshBasicMaterial({
-		//				map: textureSun
+			});
+			
+			var materialMars= new THREE.MeshBasicMaterial({
+				map: THREE.ImageUtils.loadTexture('marsmap1k.jpg')
+				, bumpMap:  THREE.ImageUtils.loadTexture('marsbump1k.jpg'),
+				bumpScale: 5
 
-		//});
+			});
+		}
+		
+		
 		
 		var textureSun = THREE.ImageUtils.loadTexture('700328main_20121014_003615_flat.jpg');
 		
@@ -198,41 +213,48 @@ function webGLStart() {
 		
 		
 		// earth
+		
 		earth = new THREE.Mesh(new THREE.SphereGeometry(sizeSphere, 50, 50), material);
-		moon = new THREE.Mesh(new THREE.SphereGeometry(sizeSphere/4, 20, 20), materialMoon);
-		earth.receiveShadow = true;
-		moon.receiveShadow = true;
-		earth.castShadow = true;
-		moon.castShadow = true;
+		moon = new THREE.Mesh(new THREE.SphereGeometry(sizeSphere/factorMoonToEarth, 20, 20), materialMoon);
+		mars = new THREE.Mesh(new THREE.SphereGeometry(sizeSphere/factorMarsToEarth, 50, 50), materialMars);
 
+		if (withShadow) {
+			earth.receiveShadow = true;
+			moon.receiveShadow = true;
+			earth.castShadow = true;
+			moon.castShadow = true;
+		}
 		
 		// earth = new THREE.Mesh(new THREE.CubeGeometry(200, 200, 200), material);
-		earth.position.x = positionSun + betweenEathToSun;
-		earth.overdraw = true;
+		earth.position.x = positionSunX + betweenEarthToSun;
+		//earth.overdraw = true;
 		earth.rotation.x = Math.PI * 0.1;
-		moon.position.x =  betweenEathToMon/2;	
+		moon.position.x =  betweenEarthToMon*factorLength/2;	
 		moon.position.y =  0;	
-		moon.position.z =  betweenEathToMon/2;	
-		
+		moon.position.z =  betweenEarthToMon*factorLength/2;	
 		
 		earth.add(moon);
-		
 		earth.rotation.x += Math.PI / 6;
 
+		
+		
 		scene.add(earth);
 		
-
+		mars.position.x = positionSunX - betweenMarsToSun;
+		
+		scene.add(mars);
 
 		
-		sun  = new THREE.Mesh(new THREE.SphereGeometry(sizeSphere, 50, 50), materialSun);
-		sun.position.x = positionSun;
+		sun  = new THREE.Mesh(new THREE.SphereGeometry(sizeSphere*factorEarthToSun, 50, 50), materialSun);
+		sun.position.x = positionSunX;
 		sun.position.z = 0;
 		sun.position.y = 0;
 		scene.add(sun);
-
+		
+	if (withShadow) {
 		var lightA = new THREE.SpotLight( 0xffffff, 1, 0,  Math.PI / 3, 10  );
 	
-		lightA.position.set(positionSun  , sun.position.y, sun.position.z );
+		lightA.position.set(positionSunX  , sun.position.y, sun.position.z );
 		
 		lightA.castShadow = true;
 		lightA.shadowCameraVisible = false;
@@ -246,7 +268,7 @@ function webGLStart() {
 		
 		var lightB = new THREE.SpotLight( 0xffffff, 1, 0,  Math.PI / 3, 10  );
 	
-		lightB.position.set(positionSun  , sun.position.y, sun.position.z );
+		lightB.position.set(positionSunX  , sun.position.y, sun.position.z );
 		
 		lightB.castShadow = true;
 		lightB.shadowCameraVisible = false;
@@ -261,7 +283,7 @@ function webGLStart() {
 		
 		var lightC = new THREE.SpotLight( 0xffffff, 1, 0,  Math.PI / 3, 10  );
 	
-		lightC.position.set(positionSun  , sun.position.y, sun.position.z );
+		lightC.position.set(positionSunX  , sun.position.y, sun.position.z );
 		
 		lightC.castShadow = true;
 		lightC.shadowCameraVisible = false;
@@ -275,7 +297,7 @@ function webGLStart() {
 
 		var lightD = new THREE.SpotLight( 0xffffff, 1, 0,  Math.PI / 3, 10  );
 	
-		lightD.position.set(positionSun  , sun.position.y, sun.position.z );
+		lightD.position.set(positionSunX  , sun.position.y, sun.position.z );
 		
 		lightD.castShadow = true;
 		lightD.shadowCameraVisible = false;
@@ -289,7 +311,7 @@ function webGLStart() {
 
 		var lightE = new THREE.SpotLight( 0xffffff, 1, 0,  Math.PI / 3, 10  );
 	
-		lightE.position.set(positionSun  , sun.position.y, sun.position.z );
+		lightE.position.set(positionSunX  , sun.position.y, sun.position.z );
 		
 		lightE.castShadow = true;
 		lightE.shadowCameraVisible = false;
@@ -303,7 +325,7 @@ function webGLStart() {
 
 		var lightF = new THREE.SpotLight( 0xffffff, 1, 0,  Math.PI / 3, 10  );
 	
-		lightF.position.set(positionSun  , sun.position.y, sun.position.z );
+		lightF.position.set(positionSunX  , sun.position.y, sun.position.z );
 		
 		lightF.castShadow = true;
 		lightF.shadowCameraVisible = false;
@@ -314,11 +336,103 @@ function webGLStart() {
 
 		lightF.shadowDarkness = 0.75
 		scene.add( lightF );
-	
-		
-		//scene.add( lightSpot );
-
+	} else {
+			// var light = new THREE.PointLight( 0xffffff, 1, 0 );
+	//	var light = new THREE.PointLight( 0xffffff, 1, 0,  Math.PI / 3, 10  );
+		//scene.add( light );
 	}
+	     //var ambientLight = new THREE.AmbientLight(0x222222);
+      //scene.add(ambientLight);
+      
+		//scene.add( lightSpot );
+		THREEx.WindowResize(renderer, camera);
+		
+		// when the mouse moves, call the given function
+		document.addEventListener( 'mousemove', onMouseMove, false );
+		document.addEventListener( 'mouseup', onMouseUp, false );
+		document.addEventListener( 'mousedown', onMouseDown, false );
+		document.addEventListener( 'keydown', onDocumentKeyDown, false );
+
+}
+
+
+
+function onDocumentKeyDown(event){
+	var delta = 200;
+	event = event || window.event;
+	var keycode = event.keyCode;
+	switch(keycode){
+	case 37 : //left arrow 
+	camera.position.x = camera.position.x - delta;
+	break;
+	case 38 : // up arrow 向
+	camera.position.z = camera.position.z - delta;
+	posZcamZoom = camera.position.z;
+	break;
+	case 39 : // right arrow
+	camera.position.x = camera.position.x + delta;
+	break;
+	case 40 : //down arrow
+	camera.position.z = camera.position.z + delta;
+	posZcamZoom = camera.position.z;
+	break;
+	case 83 : //'S'
+	case 69 :
+	case 77 :
+		objectCenter=keycode;
+		//camera.position.z = 1000;
+		break;
+	case 67 :
+		if (centerOnObject) {
+			centerOnObject=false;
+			factorLength=1;
+		} else {
+			centerOnObject=true;
+			factorLength=1;
+		}
+		break;
+	 case 68 :
+	 centerOnObject=false;
+	factorLength=1;
+
+	 break;
+	}
+	
+	
+}
+
+
+	
+	 function onMouseMove(evt) {
+        if (!mouseDown) {
+            return;
+        }
+
+        evt.preventDefault();
+
+        var deltaX = evt.clientX - mouseX,
+            deltaY = evt.clientY - mouseY;
+        mouseX = evt.clientX;
+        mouseY = evt.clientY;
+        camera.position.x -= deltaX;
+		camera.position.y += deltaY;
+    }
+
+    function onMouseDown(evt) {
+        evt.preventDefault();
+
+        mouseDown = true;
+        mouseX = evt.clientX;
+        mouseY = evt.clientY;
+    }
+
+    function onMouseUp(evt) {
+        evt.preventDefault();
+
+        mouseDown = false;
+    }
+
+	
 	
 	// this function is executed on each animation frame
 	function animate(){
@@ -326,30 +440,65 @@ function webGLStart() {
 		var time = (new Date()).getTime();
 		var timeDiff = time - lastTime;
 		
-		var angleChange = angularSpeed * timeDiff * 2 * Math.PI / 1000;
-		earth.rotation.y += angleChange;
+		var angleChange = angularSpeed * timeDiff * 2 / 100;
+		
+		hourCount += angleChange;
+		earth.rotation.y += angleChange  * Math.PI;
 		//sun.rotation.y += angleChange;
+		var dayCount = hourCount/24;
+		
+		var angleOrbit  = dayCount * Math.PI ;
 	
-		earth.position.x = sun.position.x + betweenEathToSun * Math.sin(earth.rotation.y  ) ;
-		earth.position.z = sun.position.z + betweenEathToSun * Math.cos(earth.rotation.y ) ;
+		earth.position.x = sun.position.x + betweenEarthToSun * factorElipse * Math.sin(angleOrbit ) * factorLength;
+		earth.position.z = sun.position.z + betweenEarthToSun * Math.cos(angleOrbit) * factorLength;
+	
+		mars.position.x = sun.position.x + betweenMarsToSun *  factorElipse * Math.cos(angleOrbit / 2) * factorLength;
+		mars.position.z = sun.position.z + betweenMarsToSun * Math.sin(angleOrbit / 2 ) * factorLength;
 	
 	
-		moon.position.x = betweenEathToMon * Math.sin(earth.rotation.y /28 ) ;
-		moon.position.z = betweenEathToMon * Math.cos(earth.rotation.y /28 ) ;
-		moon.rotation.y += angleChange/28;
+	
+		moon.rotation.y += angleChange  * Math.PI / 5;
+		moon.position.x = betweenEarthToMon * Math.sin(moon.rotation.y) * factorLength;
+		moon.position.z = betweenEarthToMon * Math.cos(moon.rotation.y) * factorLength;
+		
+         var objectPosZ = 2000;		
+	   switch(objectCenter){
+	   case 83 :  //'S' 
+			camera.position.x = sun.position.x;
+			camera.position.y  = sun.position.y;
+			objectPosZ = sun.position.z;
+			break;
+			
+		case 69 :  //'E' 
+			camera.position.x = earth.position.x;
+			camera.position.y  = earth.position.y;
+			objectPosZ = earth.position.z;
+			break;
 
-		if (nbLoop > 10) {
-					timeLast = (Date.now()-start) / 5000;
+		case 77 :  //'M' 
+			camera.position.x = earth.position.x + moon.position.x;
+			camera.position.y  = earth.position.y +  moon.position.y;
+			objectPosZ = earth.position.z +  moon.position.z;
+			break;
+	   
+	   }
+	   
+	   if (centerOnObject) {
+			camera.position.z = objectPosZ;
+		} else {
+			camera.position.z = posZcamZoom;
+		}
+	   if (nbLoop > 10) {
+			timeLast = (Date.now()-start) / 5000;
 
 			uniforms1.time.value = (Date.now()-start) / 5000;
 			uniforms1.random.value = Math.random();
 			nbLoop=0;
 		}   
-					nbLoop++;
+		nbLoop++;
 
         lastTime = time;
-	   
-		// render
+	   	
 		renderer.render(scene, camera);
 
 		// request new frame

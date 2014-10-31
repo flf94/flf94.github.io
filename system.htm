@@ -163,7 +163,7 @@ function webGLStart() {
 					
 		
 		// Setup of the shader material
-		var materialSun = new THREE.ShaderMaterial( {
+		var materialSun = new THREE.MeshBasicMaterial( {
 			uniforms: uniforms1,
 		///	map: THREE.ImageUtils.loadTexture('700328main_20121014_003615_flat.jpg')
 			vertexShader: document.getElementById( 'vertexShader' ).textContent,

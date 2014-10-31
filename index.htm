@@ -84,6 +84,7 @@ function webGLStart() {
 	var camera, control, scene, renderer;
 	var earth, moon, sun, uniforms1;
 	var mars;
+	var venus;
 	var hourCount=0;
 
 
@@ -93,8 +94,8 @@ function webGLStart() {
 	var sizeSphere = 40;
 	var factorMoonToEarth= 8;
 	var factorMarsToEarth= 2;
-	var factorEarthToSun= 1;
-	var betweenEarthToMon = 50;
+	var factorEarthToSun= 2;
+	var betweenEarthToMon = 80;
 	var betweenEarthToSun = 500;
 	var betweenMarsToSun = 600;
 
@@ -107,11 +108,13 @@ function webGLStart() {
 	var nbLoop = 0;
 	var mouseDown=false;
 	var mouseX, mouseY;
-	var objectCenter=83;
+	var objectCenter=0;
 	var centerOnObject=false;
 	var posZcamZoom=1000;
 	
 	var withShadow=false;
+	
+	var animateAction=true;
 	
 	function initEarth() {
 		
@@ -341,9 +344,7 @@ function webGLStart() {
 	//	var light = new THREE.PointLight( 0xffffff, 1, 0,  Math.PI / 3, 10  );
 		//scene.add( light );
 	}
-	     //var ambientLight = new THREE.AmbientLight(0x222222);
-      //scene.add(ambientLight);
-      
+	  
 		//scene.add( lightSpot );
 		THREEx.WindowResize(renderer, camera);
 		
@@ -363,24 +364,26 @@ function onDocumentKeyDown(event){
 	var keycode = event.keyCode;
 	switch(keycode){
 	case 37 : //left arrow 
-	camera.position.x = camera.position.x - delta;
+		camera.position.x = camera.position.x - delta;
 	break;
 	case 38 : // up arrow 向
-	camera.position.z = camera.position.z - delta;
-	posZcamZoom = camera.position.z;
+		camera.position.z = camera.position.z - delta;
+		posZcamZoom = camera.position.z;
 	break;
 	case 39 : // right arrow
-	camera.position.x = camera.position.x + delta;
+		camera.position.x = camera.position.x + delta;
 	break;
 	case 40 : //down arrow
-	camera.position.z = camera.position.z + delta;
-	posZcamZoom = camera.position.z;
+		camera.position.z = camera.position.z + delta;
+		posZcamZoom = camera.position.z;
 	break;
 	case 83 : //'S'
 	case 69 :
 	case 77 :
+	case 65 :
 		objectCenter=keycode;
 		//camera.position.z = 1000;
+		animateAction=true;
 		break;
 	case 67 :
 		if (centerOnObject) {
@@ -391,11 +394,19 @@ function onDocumentKeyDown(event){
 			factorLength=1;
 		}
 		break;
-	 case 68 :
-	 centerOnObject=false;
-	factorLength=1;
-
-	 break;
+	 
+	 case 81 : // 'Q' QUIT
+		objectCenter = 0;
+		centerOnObject=false;
+		factorLength=1;
+		break;
+	case 80 : // 'P' PAUSE
+		if (animateAction) {
+			animateAction=false;
+		} else {
+			animateAction=true;
+		}
+		break;
 	}
 	
 	
@@ -442,63 +453,72 @@ function onDocumentKeyDown(event){
 		
 		var angleChange = angularSpeed * timeDiff * 2 / 100;
 		
-		hourCount += angleChange;
-		earth.rotation.y += angleChange  * Math.PI;
-		//sun.rotation.y += angleChange;
-		var dayCount = hourCount/24;
-		
-		var angleOrbit  = dayCount * Math.PI ;
+		if (animateAction) {
+			// request new frame
 	
-		earth.position.x = sun.position.x + betweenEarthToSun * factorElipse * Math.sin(angleOrbit ) * factorLength;
-		earth.position.z = sun.position.z + betweenEarthToSun * Math.cos(angleOrbit) * factorLength;
-	
-		mars.position.x = sun.position.x + betweenMarsToSun *  factorElipse * Math.cos(angleOrbit / 2) * factorLength;
-		mars.position.z = sun.position.z + betweenMarsToSun * Math.sin(angleOrbit / 2 ) * factorLength;
-	
-	
-	
-		moon.rotation.y += angleChange  * Math.PI / 5;
-		moon.position.x = betweenEarthToMon * Math.sin(moon.rotation.y) * factorLength;
-		moon.position.z = betweenEarthToMon * Math.cos(moon.rotation.y) * factorLength;
-		
-         var objectPosZ = 2000;		
-	   switch(objectCenter){
-	   case 83 :  //'S' 
-			camera.position.x = sun.position.x;
-			camera.position.y  = sun.position.y;
-			objectPosZ = sun.position.z;
-			break;
 			
-		case 69 :  //'E' 
-			camera.position.x = earth.position.x;
-			camera.position.y  = earth.position.y;
-			objectPosZ = earth.position.z;
-			break;
+			hourCount += angleChange;
+			earth.rotation.y += angleChange  * Math.PI;
+			//sun.rotation.y += angleChange;
+			var dayCount = hourCount/24;
+			
+			var angleOrbit  = dayCount * Math.PI ;
+		
+			earth.position.x = sun.position.x + betweenEarthToSun * factorElipse * Math.sin(angleOrbit ) * factorLength;
+			earth.position.z = sun.position.z + betweenEarthToSun * Math.cos(angleOrbit) * factorLength;
+		
+			mars.rotation.y += angleChange  * Math.PI;
+			mars.position.x = sun.position.x + betweenMarsToSun *  factorElipse * Math.sin(angleOrbit / 2) * factorLength;
+			mars.position.z = sun.position.z + betweenMarsToSun * Math.cos(angleOrbit / 2 ) * factorLength;
+		
+		
+		
+			moon.rotation.y += angleChange  * Math.PI / 5;
+			moon.position.x = betweenEarthToMon * Math.sin(moon.rotation.y) * factorLength;
+			moon.position.z = betweenEarthToMon * Math.cos(moon.rotation.y) * factorLength;
+			
+			 var objectPosZ = 2000;		
+		   switch(objectCenter){
+		   case 83 :  //'S' Sun
+				camera.position.x = sun.position.x;
+				camera.position.y  = sun.position.y;
+				objectPosZ = sun.position.z;
+				break;
+				
+			case 69 :  //'E' Earth
+				camera.position.x = earth.position.x;
+				camera.position.y  = earth.position.y;
+				objectPosZ = earth.position.z;
+				break;
 
-		case 77 :  //'M' 
-			camera.position.x = earth.position.x + moon.position.x;
-			camera.position.y  = earth.position.y +  moon.position.y;
-			objectPosZ = earth.position.z +  moon.position.z;
-			break;
-	   
-	   }
-	   
-	   if (centerOnObject) {
-			camera.position.z = objectPosZ;
-		} else {
-			camera.position.z = posZcamZoom;
-		}
-	   if (nbLoop > 10) {
-			timeLast = (Date.now()-start) / 5000;
+			case 77 :  //'M' Moon
+				camera.position.x = earth.position.x + moon.position.x;
+				camera.position.y  = earth.position.y +  moon.position.y;
+				objectPosZ = earth.position.z +  moon.position.z;
+				break;
+		   case 65 :  //'A' Mars 
+				camera.position.x = mars.position.x ;
+				camera.position.y  = mars.position.y;
+				objectPosZ = mars.position.z ;
+				break;
+		   }
+		   
+		   if (centerOnObject) {
+				camera.position.z = objectPosZ;
+			} else {
+				camera.position.z = posZcamZoom;
+			}
+		   if (nbLoop > 10) {
+				timeLast = (Date.now()-start) / 5000;
 
-			uniforms1.time.value = (Date.now()-start) / 5000;
-			uniforms1.random.value = Math.random();
-			nbLoop=0;
-		}   
-		nbLoop++;
+				uniforms1.time.value = (Date.now()-start) / 5000;
+				uniforms1.random.value = Math.random();
+				nbLoop=0;
+			}   
+			nbLoop++;
 
-        lastTime = time;
-	   	
+			lastTime = time;
+	   	}
 		renderer.render(scene, camera);
 
 		// request new frame
